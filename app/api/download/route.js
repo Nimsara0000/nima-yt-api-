@@ -15,10 +15,32 @@ export async function GET(request) {
   }
 
   try {
-    // YouTube video info ගන්න
-    const info = await ytdl.getInfo(videoUrl);
+    // Vercel එකේ තියෙන cookies ටික ගන්න
+    const cookiesString = process.env.YOUTUBE_COOKIES;
+    let agent;
 
-    // audio-only formats විතරක් filter කරන්න
+    if (cookiesString) {
+      // cookies.txt කියවලා agent එකක් හදන්න
+      const cookies = cookiesString
+        .split('\n')
+        .filter(line => line.trim() && !line.startsWith('#'))
+        .map(line => {
+          const parts = line.split('\t');
+          return {
+            domain: parts[0],
+            path: parts[2],
+            secure: parts[3] === 'TRUE',
+            expirationDate: parseInt(parts[4]) || undefined,
+            name: parts[5],
+            value: parts[6],
+          };
+        });
+      
+      agent = ytdl.createAgent(cookies);
+    }
+
+    // Agent එක එක්ක info ගන්න
+    const info = await ytdl.getInfo(videoUrl, agent ? { agent } : {});
     const audioFormats = ytdl.filterFormats(info.formats, 'audioonly');
 
     if (!audioFormats.length) {
@@ -28,7 +50,6 @@ export async function GET(request) {
       );
     }
 
-    // හොඳම bitrate එක තෝරන්න
     const bestAudio = audioFormats.sort(
       (a, b) => (b.audioBitrate || 0) - (a.audioBitrate || 0)
     )[0];
@@ -44,14 +65,9 @@ export async function GET(request) {
       mimetype: bestAudio.mimeType,
     });
   } catch (error) {
-    // ඇත්ත error එක මෙතනින් console එකට යයි
     console.error('Actual Error:', error.message);
-    
     return NextResponse.json(
-      { 
-        error: 'ඩවුන්ලෝඩ් කරන්න බැරි වුනා.',
-        details: error.message // මේකෙන් ඇත්ත ප්‍රශ්නය පේනවා
-      },
+      { error: 'ඩවුන්ලෝඩ් කරන්න බැරි වුනා.', details: error.message },
       { status: 500 }
     );
   }
