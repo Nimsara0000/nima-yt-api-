@@ -2,9 +2,10 @@ FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# ca-certificates එකතු කළා (curl වැඩ කරන්න)
+# python3 එකතු කළා (yt-dlp වැඩ කරන්න)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
+    python3 \
     curl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
