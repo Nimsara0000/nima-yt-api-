@@ -1,17 +1,15 @@
-FROM node:20-bullseye
-
-# අවශ්‍ය system packages install කරන්න
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    python3 \
-    python3-pip \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# yt-dlp install කරන්න
-RUN pip3 install yt-dlp
+FROM node:20-bookworm-slim
 
 WORKDIR /app
+
+# ffmpeg install කරන්න (apt එකෙන්)
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# yt-dlp GitHub එකෙන් කෙලින්ම බාගන්න
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+    -o /usr/local/bin/yt-dlp \
+    && chmod a+rx /usr/local/bin/yt-dlp
 
 COPY package*.json ./
 RUN npm install
